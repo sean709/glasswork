@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GLASSWORK — Think Frameless Cost Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@300;400;600;700;900&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #0E0E0E;
+  --surface:  #161616;
+  --surface2: #1E1E1E;
+  --border:   #2A2A2A;
+  --border2:  #383838;
+  --white:    #F2EDE4;
+  --dim:      #6B6660;
+  --dimmer:   #3D3A37;
+  --red:      #E8421A;
+  --teal:     #3DBFAA;
+  --amber:    #D4A84B;
+  --green:    #4DAF7C;
+  --warn:     #E8A21A;
+  --mono:     'DM Mono', monospace;
+  --sans:     'DM Sans', sans-serif;
+  --display:  'Unbounded', sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);
+  color:var(--white);
+  font-family:var(--sans);
+  font-size:14px;
+  line-height:1.6;
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+/* ── GLASS TEXTURE BACKGROUND ── */
+body::before{
+  content:'';
+  position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:
+    radial-gradient(ellipse 60% 40% at 20% 20%, rgba(61,191,170,0.04) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 60% at 80% 80%, rgba(232,66,26,0.04) 0%, transparent 60%),
+    repeating-linear-gradient(0deg, transparent, transparent 60px, rgba(255,255,255,0.012) 60px, rgba(255,255,255,0.012) 61px),
+    repeating-linear-gradient(90deg, transparent, transparent 60px, rgba(255,255,255,0.012) 60px, rgba(255,255,255,0.012) 61px);
+}
+
+/* ── LAYOUT ── */
+.wrap{position:relative;z-index:1;max-width:1080px;margin:0 auto;padding:0 32px 80px}
+
+/* ── HEADER ── */
+.header{
+  padding:48px 0 40px;
+  display:flex;align-items:flex-end;justify-content:space-between;
+  border-bottom:1px solid var(--border);
+  margin-bottom:48px;
+  animation:up 0.6s ease both;
+}
+.header-left{}
+.app-name{
+  font-family:var(--display);
+  font-size:clamp(42px,6vw,72px);
+  font-weight:900;
+  line-height:0.95;
+  letter-spacing:-2px;
+  background:linear-gradient(135deg, var(--white) 30%, var(--teal) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+.app-name span{
+  display:block;
+  font-size:clamp(12px,1.6vw,15px);
+  font-family:var(--sans);
+  font-weight:300;
+  letter-spacing:2px;
+  text-transform:uppercase;
+  -webkit-text-fill-color:var(--dim);
+  color:var(--dim);
+  margin-top:8px;
+}
+.header-right{text-align:right}
+.tfg-badge{
+  font-family:var(--mono);font-size:10px;letter-spacing:2px;
+  text-transform:uppercase;color:var(--teal);
+  border:1px solid rgba(61,191,170,0.3);
+  padding:6px 14px;display:inline-block;margin-bottom:8px;
+}
+.header-version{font-family:var(--sans);font-size:12px;font-weight:300;color:var(--dimmer)}
+
+/* ── SECTION ── */
+.sec{
+  display:flex;align-items:center;gap:14px;
+  margin-bottom:20px;margin-top:40px;
+}
+.sec-label{
+  font-family:var(--mono);font-size:11px;letter-spacing:2px;
+  text-transform:uppercase;color:var(--teal);white-space:nowrap;
+}
+.sec-line{flex:1;height:1px;background:linear-gradient(90deg,var(--border),transparent)}
+
+/* ── PRODUCT SELECTOR ── */
+.product-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:3px;
+  margin-bottom:32px;animation:up 0.6s 0.05s ease both;
+}
+.product-card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-top:3px solid var(--border);
+  padding:20px 18px 16px;
+  cursor:pointer;
+  transition:all 0.2s;
+  position:relative;overflow:hidden;
+}
+.product-card::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at 50% 0%, rgba(61,191,170,0.06), transparent 70%);
+  opacity:0;transition:opacity 0.3s;
+}
+.product-card:hover::before,.product-card.active::before{opacity:1}
+.product-card:hover{border-top-color:var(--teal);border-color:var(--border2)}
+.product-card.active{border-top-color:var(--red);border-color:var(--border2);background:var(--surface2)}
+.pc-icon{
+  font-size:24px;margin-bottom:10px;display:block;
+  filter:grayscale(1);transition:filter 0.2s;
+}
+.product-card.active .pc-icon,.product-card:hover .pc-icon{filter:grayscale(0)}
+.pc-name{
+  font-family:var(--display);font-size:12px;font-weight:700;
+  letter-spacing:0.5px;text-transform:uppercase;color:var(--white);
+  margin-bottom:6px;
+}
+.pc-desc{font-family:var(--sans);font-size:12px;color:var(--dim);line-height:1.5;font-weight:300}
+.pc-check{
+  position:absolute;top:12px;right:12px;
+  width:18px;height:18px;border-radius:50%;
+  background:var(--red);display:none;
+  align-items:center;justify-content:center;
+  font-size:10px;color:white;
+}
+.product-card.active .pc-check{display:flex}
+
+/* ── INPUT GRID ── */
+.input-grid{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+  gap:16px;margin-bottom:24px;
+  animation:up 0.6s 0.1s ease both;
+}
+.inp-group{display:flex;flex-direction:column;gap:8px}
+.inp-label{
+  font-family:var(--mono);font-size:10px;letter-spacing:1.5px;
+  text-transform:uppercase;color:var(--dim);
+}
+.inp-wrap{position:relative}
+.inp-suffix{
+  position:absolute;right:14px;top:50%;transform:translateY(-50%);
+  font-family:var(--mono);font-size:12px;color:var(--dim);
+  pointer-events:none;
+}
+input[type=number],select{
+  width:100%;padding:13px 16px;
+  background:var(--surface2);
+  border:1px solid var(--border2);
+  color:var(--white);
+  font-family:var(--mono);font-size:15px;
+  outline:none;border-radius:0;-moz-appearance:textfield;
+  transition:border-color 0.2s,background 0.2s;
+  -webkit-appearance:none;
+}
+input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
+input[type=number]:focus,select:focus{
+  border-color:var(--teal);background:var(--surface);
+}
+select option{background:var(--surface2);color:var(--white)}
+
+/* ── FINISH SELECTOR ── */
+.finish-row{
+  display:grid;grid-template-columns:repeat(6,1fr);gap:3px;
+  margin-bottom:24px;animation:up 0.6s 0.12s ease both;
+}
+.fin-card{
+  background:var(--surface);border:1px solid var(--border);
+  padding:12px 8px;cursor:pointer;text-align:center;
+  transition:all 0.2s;
+}
+.fin-card:hover{border-color:var(--border2);background:var(--surface2)}
+.fin-card.active{border-color:var(--teal);background:var(--surface2)}
+.fin-swatch{
+  width:28px;height:28px;border-radius:50%;margin:0 auto 8px;
+  border:2px solid var(--border2);
+}
+.fin-name{font-family:var(--mono);font-size:9px;letter-spacing:0.5px;text-transform:uppercase;color:var(--dim);line-height:1.4}
+.fin-card.active .fin-name{color:var(--teal)}
+
+/* ── GM SLIDER ── */
+.gm-row{
+  display:flex;align-items:center;gap:20px;margin-bottom:28px;
+  padding:16px 20px;background:var(--surface);border:1px solid var(--border);
+  animation:up 0.6s 0.14s ease both;
+}
+.gm-label{font-family:var(--sans);font-size:13px;font-weight:400;color:var(--dim);white-space:nowrap}
+.gm-val{font-family:var(--display);font-size:22px;font-weight:700;color:var(--amber);white-space:nowrap;min-width:52px;text-align:right}
+input[type=range]{
+  flex:1;-webkit-appearance:none;height:3px;
+  background:var(--border2);border-radius:2px;cursor:pointer;outline:none;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:18px;height:18px;
+  background:var(--amber);
+  clip-path:polygon(50% 0%,100% 50%,50% 100%,0% 50%);
+  cursor:pointer;transition:transform 0.15s;
+}
+input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.3)}
+
+/* ── RESULTS ── */
+.results{
+  display:grid;grid-template-columns:1fr 1fr;gap:3px;
+  margin-bottom:32px;
+}
+.result-main{
+  grid-column:1/-1;
+  background:linear-gradient(135deg,rgba(232,66,26,0.08),rgba(61,191,170,0.04));
+  border:1px solid var(--border2);
+  border-top:3px solid var(--red);
+  padding:32px 28px;
+  display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:20px;
+  animation:up 0.6s 0.2s ease both;
+}
+.result-main-label{
+  font-family:var(--mono);font-size:10px;letter-spacing:3px;
+  text-transform:uppercase;color:var(--dim);margin-bottom:8px;
+}
+.result-main-price{
+  font-family:var(--display);font-size:clamp(48px,6vw,72px);
+  font-weight:900;letter-spacing:-2px;
+  background:linear-gradient(135deg,var(--white),var(--amber));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  line-height:1;
+}
+.result-main-exgst{
+  font-family:var(--mono);font-size:12px;color:var(--dim);margin-top:6px;
+}
+.result-gm-ring{position:relative;width:90px;height:90px;flex-shrink:0}
+.gm-ring-svg{transform:rotate(-90deg)}
+.gm-ring-svg circle{transition:stroke-dashoffset 0.6s cubic-bezier(0.22,1,0.36,1)}
+.gm-ring-label{
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+}
+.gm-ring-pct{font-family:var(--display);font-size:18px;font-weight:700;color:var(--white)}
+.gm-ring-sub{font-family:var(--mono);font-size:8px;letter-spacing:1px;color:var(--dim);margin-top:2px}
+
+.result-cell{
+  background:var(--surface);border:1px solid var(--border);
+  padding:20px 22px;animation:up 0.6s 0.22s ease both;
+}
+.rc-label{font-family:var(--mono);font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--dim);margin-bottom:8px}
+.rc-val{font-family:var(--display);font-size:28px;font-weight:700;color:var(--white)}
+.rc-val.teal{color:var(--teal)} .rc-val.green{color:var(--green)} .rc-val.warn{color:var(--warn)}
+
+/* ── BREAKDOWN TABLE ── */
+.breakdown{
+  background:var(--surface);border:1px solid var(--border);
+  overflow:hidden;margin-bottom:32px;
+  animation:up 0.6s 0.25s ease both;
+}
+.breakdown-hd{
+  background:var(--surface2);border-bottom:1px solid var(--border);
+  padding:14px 22px;display:flex;align-items:center;justify-content:space-between;
+}
+.breakdown-title{font-family:var(--sans);font-size:14px;font-weight:600;letter-spacing:0.5px;text-transform:uppercase}
+.bk-toggle{
+  font-family:var(--mono);font-size:10px;letter-spacing:1px;text-transform:uppercase;
+  color:var(--teal);cursor:pointer;border:1px solid rgba(61,191,170,0.3);padding:4px 10px;
+  transition:all 0.2s;
+}
+.bk-toggle:hover{background:rgba(61,191,170,0.08)}
+.bk-body{overflow:hidden;transition:max-height 0.4s cubic-bezier(0.22,1,0.36,1);max-height:600px}
+.bk-body.collapsed{max-height:0}
+.bk-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 22px;border-bottom:1px solid var(--border);
+  transition:background 0.15s;
+}
+.bk-row:last-child{border-bottom:none}
+.bk-row:hover{background:rgba(255,255,255,0.02)}
+.bk-row.total{background:var(--bg);border-top:1px solid var(--border2)}
+.bk-name{font-family:var(--sans);font-size:13px;color:var(--white);display:flex;align-items:center;gap:10px;line-height:1.4}
+.bk-tag{
+  font-family:var(--mono);font-size:9px;letter-spacing:0.5px;
+  padding:2px 8px;border:1px solid;text-transform:uppercase;
+}
+.bk-tag.elite{color:var(--teal);border-color:rgba(61,191,170,0.3)}
+.bk-tag.ppb{color:var(--amber);border-color:rgba(212,168,75,0.3)}
+.bk-tag.labour{color:var(--dim);border-color:var(--border2)}
+.bk-cost{font-family:var(--mono);font-size:13px;color:var(--white);white-space:nowrap}
+.bk-cost.dim{color:var(--dim)}
+.bk-bar-wrap{width:80px;height:3px;background:var(--border);position:relative;overflow:hidden;margin:0 12px}
+.bk-bar{height:100%;position:absolute;left:0;top:0;transition:width 0.5s cubic-bezier(0.22,1,0.36,1)}
+
+/* ── COMPARISON PANEL ── */
+.compare{
+  background:var(--surface);border:1px solid var(--border);
+  padding:24px;margin-bottom:32px;
+  animation:up 0.6s 0.28s ease both;
+}
+.compare-title{font-family:var(--sans);font-size:14px;font-weight:600;letter-spacing:0.5px;margin-bottom:18px}
+.compare-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:3px}
+.cmp-cell{
+  background:var(--surface2);padding:14px 16px;
+  border-left:3px solid var(--border);
+  transition:border-color 0.2s;
+}
+.cmp-cell:hover{border-left-color:var(--teal)}
+.cmp-gm{font-family:var(--mono);font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--dim);margin-bottom:6px}
+.cmp-price{font-family:var(--display);font-size:22px;font-weight:700;color:var(--white)}
+.cmp-contrib{font-family:var(--sans);font-size:12px;color:var(--dim);margin-top:4px;font-weight:300}
+
+/* ── BUILDER DISCOUNT ── */
+.builder-panel{
+  background:var(--surface);border:1px solid var(--border);
+  border-left:3px solid var(--amber);
+  padding:22px;margin-bottom:32px;
+  animation:up 0.6s 0.3s ease both;
+}
+.builder-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.builder-title{font-family:var(--sans);font-size:14px;font-weight:600;letter-spacing:0.5px}
+.builder-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:3px}
+.bd-cell{background:var(--surface2);padding:14px 16px;cursor:pointer;transition:background 0.2s;border:1px solid transparent}
+.bd-cell:hover{background:var(--bg)}
+.bd-cell.active{border-color:var(--amber);background:rgba(212,168,75,0.06)}
+.bd-tier{font-family:var(--sans);font-size:12px;font-weight:300;color:var(--dim);margin-bottom:6px}
+.bd-pct{font-family:var(--display);font-size:22px;font-weight:700;color:var(--white)}
+.bd-cell.active .bd-pct{color:var(--amber)}
+.bd-price{font-family:var(--sans);font-size:12px;color:var(--dim);margin-top:4px}
+
+/* ── EMPTY STATE ── */
+.empty{
+  padding:80px 40px;text-align:center;
+  animation:up 0.6s ease both;
+}
+.empty-icon{font-size:64px;margin-bottom:20px;opacity:0.3}
+.empty-title{font-family:var(--display);font-size:22px;font-weight:700;letter-spacing:0.5px;color:var(--dimmer);margin-bottom:8px}
+.empty-sub{font-family:var(--sans);font-size:13px;font-weight:300;color:var(--dimmer)}
+
+/* ── FOOTER ── */
+.footer{
+  padding-top:32px;border-top:1px solid var(--border);
+  display:flex;justify-content:space-between;align-items:center;
+  animation:up 0.6s ease both;
+}
+.footer-brand{font-family:var(--display);font-size:14px;font-weight:700;letter-spacing:3px}
+.footer-brand em{color:var(--red);font-style:normal}
+.footer-right{font-family:var(--sans);font-size:12px;font-weight:300;color:var(--dimmer);text-align:right;line-height:1.8}
+
+/* ── ANIMATIONS ── */
+@keyframes up{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+.calculating{animation:pulse 1s ease infinite}
+
+/* ── RESPONSIVE ── */
+@media(max-width:700px){
+  .wrap{padding:0 16px 60px}
+  .product-grid{grid-template-columns:1fr 1fr}
+  .finish-row{grid-template-columns:repeat(3,1fr)}
+  .results{grid-template-columns:1fr}
+  .result-main{flex-direction:column;align-items:flex-start}
+  .compare-grid{grid-template-columns:1fr}
+  .builder-grid{grid-template-columns:1fr 1fr}
+  .input-grid{grid-template-columns:1fr 1fr}
+  .header{flex-direction:column;align-items:flex-start;gap:16px}
+  .header-right{text-align:left}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-left">
+    <div class="app-name">
+      GLASS<br>WORK
+      <span>Shower Cost Calculator · v1.0</span>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="tfg-badge">Think Frameless Glassworks</div>
+    <div class="header-version">ABN: 40 655 216 694 · Victoria, AU</div>
+  </div>
+</header>
+
+<!-- PRODUCT TYPE -->
+<div class="sec"><span class="sec-label">01 — Select Product</span><span class="sec-line"></span></div>
+<div class="product-grid">
+  <div class="product-card" data-product="STD" onclick="selectProduct('STD')">
+    <span class="pc-icon">🚪</span>
+    <div class="pc-name">Frameless STD</div>
+    <div class="pc-desc">Front return · Elite stock panels · 2000–2100h</div>
+    <div class="pc-check">✓</div>
+  </div>
+  <div class="product-card" data-product="FO" onclick="selectProduct('FO')">
+    <span class="pc-icon">🪟</span>
+    <div class="pc-name">Frameless FO</div>
+    <div class="pc-desc">Front only · Elite door + hinge · 2000–2100h</div>
+    <div class="pc-check">✓</div>
+  </div>
+  <div class="product-card" data-product="CUSTHINGE" onclick="selectProduct('CUSTHINGE')">
+    <span class="pc-icon">⚙️</span>
+    <div class="pc-name">Custom Hinge</div>
+    <div class="pc-desc">Elite door + return · PPB hinge panel</div>
+    <div class="pc-check">✓</div>
+  </div>
+  <div class="product-card" data-product="CUSTFR" onclick="selectProduct('CUSTFR')">
+    <span class="pc-icon">✂️</span>
+    <div class="pc-name">Custom FR</div>
+    <div class="pc-desc">Elite door · PPB hinge + PPB return</div>
+    <div class="pc-check">✓</div>
+  </div>
+  <div class="product-card" data-product="FULLCUST" onclick="selectProduct('FULLCUST')">
+    <span class="pc-icon">💎</span>
+    <div class="pc-name">Full Custom</div>
+    <div class="pc-desc">All PPB · door, hinge, return, lid · 2100–2700h</div>
+    <div class="pc-check">✓</div>
+  </div>
+  <div class="product-card" data-product="FIXED" onclick="selectProduct('FIXED')">
+    <span class="pc-icon">🔲</span>
+    <div class="pc-name">Fixed Panel</div>
+    <div class="pc-desc">PPB custom cut · 10mm clear or low iron reed</div>
+    <div class="pc-check">✓</div>
+  </div>
+</div>
+
+<!-- DIMENSIONS -->
+<div class="sec"><span class="sec-label">02 — Dimensions</span><span class="sec-line"></span></div>
+<div class="input-grid" id="dimGrid">
+  <!-- Injected by JS based on product -->
+</div>
+
+<!-- FINISH -->
+<div class="sec"><span class="sec-label">03 — Hardware Finish</span><span class="sec-line"></span></div>
+<div class="finish-row" id="finishRow">
+  <div class="fin-card active" data-fin="Chrome" onclick="selectFinish('Chrome')">
+    <div class="fin-swatch" style="background:radial-gradient(circle at 35% 35%,#fff 0%,#d0d0d0 40%,#888 100%)"></div>
+    <div class="fin-name">Chrome</div>
+  </div>
+  <div class="fin-card" data-fin="MattBlack" onclick="selectFinish('MattBlack')">
+    <div class="fin-swatch" style="background:radial-gradient(circle at 35% 35%,#555 0%,#222 50%,#111 100%)"></div>
+    <div class="fin-name">Matt Black</div>
+  </div>
+  <div class="fin-card" data-fin="SatinChrome" onclick="selectFinish('SatinChrome')">
+    <div class="fin-swatch" style="background:radial-gradient(circle at 35% 35%,#e8e8e8 0%,#b0b0b0 50%,#888 100%)"></div>
+    <div class="fin-name">Satin Chrome</div>
+  </div>
+  <div class="fin-card" data-fin="BrushedNickel" onclick="selectFinish('BrushedNickel')">
+    <div class="fin-swatch" style="background:radial-gradient(circle at 35% 35%,#d4c9b0 0%,#a09070 50%,#706050 100%)"></div>
+    <div class="fin-name">Brushed Nickel</div>
+  </div>
+  <div class="fin-card" data-fin="BrushedGold" onclick="selectFinish('BrushedGold')">
+    <div class="fin-swatch" style="background:radial-gradient(circle at 35% 35%,#f5d978 0%,#c8962a 50%,#a07010 100%)"></div>
+    <div class="fin-name">Brushed Gold</div>
+  </div>
+  <div class="fin-card" data-fin="Gunmetal" onclick="selectFinish('Gunmetal')">
+    <div class="fin-swatch" style="background:radial-gradient(circle at 35% 35%,#707878 0%,#404848 50%,#202828 100%)"></div>
+    <div class="fin-name">Gunmetal</div>
+  </div>
+</div>
+
+<!-- GM TARGET -->
+<div class="gm-row">
+  <span class="gm-label">Target Gross Margin</span>
+  <input type="range" id="gmSlider" min="45" max="75" step="1" value="62" oninput="render()">
+  <span class="gm-val" id="gmVal">62%</span>
+</div>
+
+<!-- RESULTS -->
+<div class="sec"><span class="sec-label">04 — Result</span><span class="sec-line"></span></div>
+<div id="resultsWrap">
+  <div class="empty">
+    <div class="empty-icon">◇</div>
+    <div class="empty-title">SELECT A PRODUCT TO BEGIN</div>
+    <div class="empty-sub">Choose a shower type above · enter dimensions · get the number</div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="footer-brand"><em>THINK</em> FRAMELESS GLASSWORKS</div>
+  <div class="footer-right">thinkframeless.com.au<br>Internal use only · GLASSWORK v1.0</div>
+</footer>
+
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+// PRICING DATA
+// ═══════════════════════════════════════════════
+const PPB_M2 = 70.00, PPB_LI_M2 = 120.00, PPB_MIN = 0.30;
+const PPB_POLISH = 8.00, PPB_CUTOUT = 35.00, PPB_KNOB = 10.00;
+
+const EFP = {100:11,125:13.75,150:16.5,175:19.25,200:22,225:23.3,250:27.5,275:30.25,
+  300:33,325:35.75,350:38.5,375:41.25,400:44,425:46.75,450:49.5,475:52.25,500:55,
+  525:57.75,550:60.5,575:63.25,600:66,650:71.5,700:77,750:82.5,800:88,850:93.5,
+  900:99,950:104.5,1000:110,1050:115.5,1100:121,1150:126.5,1200:132,
+  1250:137.5,1300:143,1350:148.5,1400:154,1500:165};
+
+const EDP_AVG = {2000: 88.49, 2100: 83.19};
+
+const HW_COST = {
+  Chrome:        {SB50:11.55,ES2:38.90,OPF1:7.41, HR1:10.89,SK40:9.24},
+  MattBlack:     {SB50:12.76,ES2:40.15,OPF1:9.07, HR1:14.19,SK40:10.89},
+  SatinChrome:   {SB50:14.82,ES2:40.15,OPF1:13.10,HR1:9.90, SK40:10.89},
+  BrushedNickel: {SB50:12.76,ES2:40.15,OPF1:10.60,HR1:20.43,SK40:12.76},
+  BrushedGold:   {SB50:16.06,ES2:57.20,OPF1:13.10,HR1:18.57,SK40:14.19},
+  Gunmetal:      {SB50:16.06,ES2:60.39,OPF1:13.10,HR1:20.43,SK40:21.61},
+};
+
+const LABOUR = {STD:300,FO:200,CUSTHINGE:300,CUSTFR:300,FULLCUST:300,FIXED:150};
+
+const BUILDER_TIERS = [
+  {label:'No discount',    pct:0},
+  {label:'Preferred (10–20 jobs/yr)',  pct:0.08},
+  {label:'Development (30+ jobs/yr)',  pct:0.12},
+  {label:'Display home program', pct:0.10},
+];
+
+// ═══════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════
+let state = {
+  product: null,
+  finish: 'Chrome',
+  gm: 0.62,
+  builder: 0,
+  dims: {},
+  glassType: 'clear',
+};
+
+// ═══════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════
+function getEFP(w, h=2000) {
+  const keys = Object.keys(EFP).map(Number);
+  const n = keys.reduce((prev,cur) => Math.abs(cur-w)<Math.abs(prev-w)?cur:prev);
+  return EFP[n] * (h > 2000 ? 1.15 : 1.0);
+}
+function hwTotal(fin) {
+  const h = HW_COST[fin];
+  return h.SB50*4 + h.ES2*2 + h.OPF1*3 + h.HR1 + h.SK40;
+}
+function ppbGlass(w, h, isLI=false) {
+  return Math.max((w/1000)*(h/1000), PPB_MIN) * (isLI ? PPB_LI_M2 : PPB_M2);
+}
+function ppbPolish(w, h) { return 2*(w+h)/1000 * PPB_POLISH; }
+function ppbHinge(w, h)  { return ppbGlass(w,h) + ppbPolish(w,h) + 2*PPB_CUTOUT; }
+function ppbReturn(w, h) { return ppbGlass(w,h) + ppbPolish(w,h); }
+function ppbDoor(w, h)   { return ppbGlass(w,h) + ppbPolish(w,h) + 2*PPB_CUTOUT + PPB_KNOB; }
+function ppbLid(w)       { return ppbGlass(w,120) + ppbPolish(w,120); }
+function avgHingeW(W)    { const vd=[600,650,700].filter(d=>W-d-9>=100); return vd.reduce((s,d)=>s+(W-d-9),0)/vd.length; }
+function avgDoorW(W)     { const vd=[600,650,700].filter(d=>W-d-9>=100); return vd.reduce((s,d)=>s+d,0)/vd.length; }
+function midReturnW(D)   { return Math.max(D-50-9,100); }
+function retailPrice(cost, gm) { return Math.round(cost/(1-gm)*1.1/5)*5; }
+function fmt(n, dec=0)   { return '$'+n.toFixed(dec).replace(/\B(?=(\d{3})+(?!\d))/g,','); }
+
+// ═══════════════════════════════════════════════
+// COST ENGINE
+// ═══════════════════════════════════════════════
+function calcCost() {
+  const {product,finish,dims,glassType} = state;
+  if (!product) return null;
+
+  const W = +dims.W||0, D = +dims.D||0, H = +dims.H||2000;
+  if (!W) return null;
+
+  const hw = hwTotal(finish);
+  const labour = LABOUR[product] || 300;
+  const items = [];
+
+  if (product === 'STD') {
+    const door = EDP_AVG[H] || EDP_AVG[2000];
+    const hinge = getEFP(avgHingeW(W), H);
+    const ret   = getEFP(midReturnW(D||900), H);
+    items.push({name:`Door panel (avg ~${Math.round(avgDoorW(W))}mm × ${H}mm)`, cost:door, tag:'elite'});
+    items.push({name:`Hinge panel (EFP ~${Math.round(avgHingeW(W))}mm × ${H}mm)`, cost:hinge, tag:'elite'});
+    if (D) items.push({name:`Return panel (EFP ~${Math.round(midReturnW(D))}mm × ${H}mm)`, cost:ret, tag:'elite'});
+  } else if (product === 'FO') {
+    const door  = EDP_AVG[H] || EDP_AVG[2000];
+    const hinge = getEFP(avgHingeW(W), H);
+    items.push({name:`Door panel (avg ~${Math.round(avgDoorW(W))}mm × ${H}mm)`, cost:door, tag:'elite'});
+    items.push({name:`Hinge panel (EFP ~${Math.round(avgHingeW(W))}mm × ${H}mm)`, cost:hinge, tag:'elite'});
+  } else if (product === 'CUSTHINGE') {
+    const door  = EDP_AVG[H] || EDP_AVG[2000];
+    const hw_w  = avgHingeW(W);
+    const hg    = ppbGlass(hw_w, H);
+    const hp    = ppbPolish(hw_w, H);
+    const hc    = 2*PPB_CUTOUT;
+    const hinge = hg+hp+hc;
+    const ret   = getEFP(midReturnW(D||900), H);
+    items.push({name:`Door panel (avg ~${Math.round(avgDoorW(W))}mm × ${H}mm)`, cost:door, tag:'elite'});
+    items.push({name:`Hinge panel PPB (~${Math.round(hw_w)}mm × ${H}mm)`, cost:hg, sub:`Glass`, tag:'ppb'});
+    items.push({name:`  + 4-edge polish`, cost:hp, sub:'', tag:'ppb'});
+    items.push({name:`  + 2× side cutouts @ $35`, cost:hc, sub:'', tag:'ppb'});
+    if (D) items.push({name:`Return panel (EFP ~${Math.round(midReturnW(D))}mm × ${H}mm)`, cost:ret, tag:'elite'});
+  } else if (product === 'CUSTFR') {
+    const door  = EDP_AVG[H] || EDP_AVG[2000];
+    const hw_w  = avgHingeW(W);
+    const hinge = ppbHinge(hw_w, H);
+    const rw    = midReturnW(D||900);
+    const ret   = ppbReturn(rw, H);
+    items.push({name:`Door panel (avg ~${Math.round(avgDoorW(W))}mm × ${H}mm)`, cost:door, tag:'elite'});
+    items.push({name:`Hinge panel PPB (~${Math.round(hw_w)}mm × ${H}mm)`, cost:ppbGlass(hw_w,H), tag:'ppb'});
+    items.push({name:`  + 4-edge polish + 2× cutouts`, cost:ppbPolish(hw_w,H)+2*PPB_CUTOUT, tag:'ppb'});
+    items.push({name:`Return panel PPB (~${Math.round(rw)}mm × ${H}mm)`, cost:ppbGlass(rw,H), tag:'ppb'});
+    items.push({name:`  + 4-edge polish`, cost:ppbPolish(rw,H), tag:'ppb'});
+  } else if (product === 'FULLCUST') {
+    const dw = avgDoorW(W), hw_w = avgHingeW(W), rw = midReturnW(D||900);
+    const door  = ppbDoor(dw, H);
+    const hinge = ppbHinge(hw_w, H);
+    const ret   = ppbReturn(rw, H);
+    const lid   = ppbLid(W);
+    items.push({name:`Door PPB (~${Math.round(dw)}mm × ${H}mm) + polish + 2 cutouts + knob`, cost:door, tag:'ppb'});
+    items.push({name:`Hinge PPB (~${Math.round(hw_w)}mm × ${H}mm) + polish + 2 cutouts`, cost:hinge, tag:'ppb'});
+    if (D) items.push({name:`Return PPB (~${Math.round(rw)}mm × ${H}mm) + polish`, cost:ret, tag:'ppb'});
+    items.push({name:`Lid PPB (${W}mm × 120mm) + polish`, cost:lid, tag:'ppb'});
+  } else if (product === 'FIXED') {
+    const isLI = glassType === 'li';
+    const gl = ppbGlass(W, H, isLI);
+    const po = ppbPolish(W, H);
+    items.push({name:`${isLI?'Low Iron Narrow Reed':'10mm Clear TGH'} (${W}mm × ${H}mm)`, cost:gl, tag:'ppb'});
+    items.push({name:`4-edge polish`, cost:po, tag:'ppb'});
+  }
+
+  // Hardware
+  items.push({name:`Hardware — ${finish} (4×SB50, 2×ES2, 3×OPF1, HR1, SK40)`, cost:hw, tag:'elite'});
+  items.push({name:`Labour`, cost:labour, tag:'labour'});
+
+  const totalCost = items.reduce((s,i)=>s+i.cost,0);
+  return {items, totalCost, hw, labour};
+}
+
+// ═══════════════════════════════════════════════
+// UI — PRODUCT SELECTION
+// ═══════════════════════════════════════════════
+const DIM_CONFIGS = {
+  STD:       [{id:'W',label:'Front Width',unit:'mm'},{id:'D',label:'Return Depth',unit:'mm'},{id:'H',label:'Height',unit:'mm',options:[2000,2100]}],
+  FO:        [{id:'W',label:'Front Width',unit:'mm'},{id:'H',label:'Height',unit:'mm',options:[2000,2100]}],
+  CUSTHINGE: [{id:'W',label:'Front Width',unit:'mm'},{id:'D',label:'Return Depth',unit:'mm'},{id:'H',label:'Height',unit:'mm',options:[2000,2100]}],
+  CUSTFR:    [{id:'W',label:'Front Width',unit:'mm'},{id:'D',label:'Return Depth',unit:'mm'},{id:'H',label:'Height',unit:'mm',options:[2000,2100]}],
+  FULLCUST:  [{id:'W',label:'Front Width',unit:'mm'},{id:'D',label:'Return Depth',unit:'mm'},{id:'H',label:'Height (2100–2700)',unit:'mm'}],
+  FIXED:     [{id:'W',label:'Panel Width',unit:'mm'},{id:'H',label:'Panel Height',unit:'mm'},{id:'type',label:'Glass Type',type:'select',options:['clear','li']}],
+};
+
+function selectProduct(p) {
+  state.product = p;
+  state.dims = {};
+  document.querySelectorAll('.product-card').forEach(c=>{
+    c.classList.toggle('active', c.dataset.product===p);
+  });
+  renderDims();
+  render();
+}
+
+function selectFinish(f) {
+  state.finish = f;
+  document.querySelectorAll('.fin-card').forEach(c=>{
+    c.classList.toggle('active', c.dataset.fin===f);
+  });
+  render();
+}
+
+function renderDims() {
+  const grid = document.getElementById('dimGrid');
+  if (!state.product) { grid.innerHTML=''; return; }
+  const config = DIM_CONFIGS[state.product] || [];
+  grid.innerHTML = config.map(dim => {
+    if (dim.type === 'select') {
+      const opts = dim.options.map(o=>
+        `<option value="${o}">${o==='clear'?'10mm Clear Toughened':'Low Iron Narrow Reed'}</option>`
+      ).join('');
+      return `<div class="inp-group">
+        <label class="inp-label">${dim.label}</label>
+        <select id="dim_${dim.id}" onchange="state.dims['${dim.id}']=this.value;render()">${opts}</select>
+      </div>`;
+    }
+    if (dim.options) {
+      const opts = dim.options.map(o=>`<option value="${o}">${o}mm</option>`).join('');
+      return `<div class="inp-group">
+        <label class="inp-label">${dim.label}</label>
+        <select id="dim_${dim.id}" onchange="state.dims['${dim.id}']=+this.value;render()">${opts}</select>
+      </div>`;
+    }
+    return `<div class="inp-group">
+      <label class="inp-label">${dim.label}</label>
+      <div class="inp-wrap">
+        <input type="number" id="dim_${dim.id}" placeholder="e.g. ${dim.id==='W'?900:dim.id==='D'?900:2100}"
+          min="${dim.id==='H'&&state.product==='FULLCUST'?2100:100}" max="${dim.id==='H'?2700:2000}"
+          oninput="state.dims['${dim.id}']=+this.value;render()">
+        <span class="inp-suffix">${dim.unit}</span>
+      </div>
+    </div>`;
+  }).join('');
+  // Set defaults
+  if (state.dims.H === undefined && config.find(d=>d.id==='H'&&d.options)) {
+    state.dims.H = config.find(d=>d.id==='H').options[0];
+  }
+  if (state.dims.type === undefined && config.find(d=>d.id==='type')) {
+    state.dims.type = 'clear';
+  }
+}
+
+// ═══════════════════════════════════════════════
+// MAIN RENDER
+// ═══════════════════════════════════════════════
+function render() {
+  const gm = +document.getElementById('gmSlider').value / 100;
+  state.gm = gm;
+  state.glassType = state.dims.type || 'clear';
+  document.getElementById('gmVal').textContent = Math.round(gm*100) + '%';
+
+  const calc = calcCost();
+  const wrap = document.getElementById('resultsWrap');
+
+  if (!calc || !state.product || !state.dims.W) {
+    wrap.innerHTML = `<div class="empty">
+      <div class="empty-icon">◇</div>
+      <div class="empty-title">ENTER DIMENSIONS</div>
+      <div class="empty-sub">Add width${state.product&&['STD','CUSTHINGE','CUSTFR','FULLCUST'].includes(state.product)?' and return depth':''} to calculate</div>
+    </div>`;
+    return;
+  }
+
+  const {items, totalCost} = calc;
+  const retailInc = retailPrice(totalCost, gm);
+  const retailEx  = retailInc / 1.1;
+  const contrib   = retailEx - totalCost;
+  const gmActual  = (retailEx - totalCost) / retailEx;
+  const maxCost   = Math.max(...items.map(i=>i.cost));
+
+  // Builder discount
+  const bd = BUILDER_TIERS[state.builder];
+  const bdPrice = bd.pct > 0 ? Math.round(retailInc * (1-bd.pct) / 5)*5 : null;
+
+  // GM ring
+  const radius = 32, circ = 2*Math.PI*radius;
+  const dash = circ * (1 - gmActual);
+  const ringColor = gmActual >= 0.60 ? '#4DAF7C' : gmActual >= 0.55 ? '#E8A21A' : '#E8421A';
+
+  wrap.innerHTML = `
+  <!-- MAIN RESULT -->
+  <div class="results">
+    <div class="result-main">
+      <div>
+        <div class="result-main-label">Retail Price (inc-GST)</div>
+        <div class="result-main-price">${fmt(retailInc)}</div>
+        <div class="result-main-exgst">${fmt(retailEx)} ex-GST · ${fmt(totalCost)} total cost</div>
+      </div>
+      <svg class="gm-ring-svg" viewBox="0 0 80 80" width="90" height="90" style="transform:rotate(-90deg);overflow:visible">
+        <circle cx="40" cy="40" r="${radius}" fill="none" stroke="#2A2A2A" stroke-width="7"/>
+        <circle cx="40" cy="40" r="${radius}" fill="none" stroke="${ringColor}" stroke-width="7"
+          stroke-dasharray="${circ}" stroke-dashoffset="${dash}" stroke-linecap="round"
+          style="transition:stroke-dashoffset 0.6s cubic-bezier(0.22,1,0.36,1),stroke 0.3s"/>
+        <text x="40" y="36" text-anchor="middle" font-family="Unbounded" font-size="13" font-weight="700" fill="#F2EDE4" transform="rotate(90,40,40)">${Math.round(gmActual*100)}%</text>
+        <text x="40" y="50" text-anchor="middle" font-family="DM Mono" font-size="7" fill="#6B6660" transform="rotate(90,40,40)">MARGIN</text>
+      </svg>
+    </div>
+    <div class="result-cell">
+      <div class="rc-label">Total Cost (ex-GST)</div>
+      <div class="rc-val">${fmt(totalCost)}</div>
+    </div>
+    <div class="result-cell">
+      <div class="rc-label">Contribution</div>
+      <div class="rc-val teal">${fmt(contrib)}</div>
+    </div>
+  </div>
+
+  <!-- COST BREAKDOWN -->
+  <div class="breakdown">
+    <div class="breakdown-hd">
+      <div class="breakdown-title">Cost Breakdown</div>
+      <span class="bk-toggle" onclick="toggleBreakdown(this)">Hide ↑</span>
+    </div>
+    <div class="bk-body" id="bkBody">
+      ${items.map(item => `
+        <div class="bk-row">
+          <div class="bk-name">
+            ${item.name}
+            <span class="bk-tag ${item.tag}">${item.tag==='elite'?'Elite Glass':item.tag==='ppb'?'PPB Glass':'Labour'}</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:0">
+            <div class="bk-bar-wrap">
+              <div class="bk-bar" style="width:${Math.round(item.cost/maxCost*100)}%;background:${item.tag==='elite'?'var(--teal)':item.tag==='ppb'?'var(--amber)':'var(--dimmer)'}"></div>
+            </div>
+            <div class="bk-cost">${fmt(item.cost,2)}</div>
+          </div>
+        </div>`).join('')}
+      <div class="bk-row total">
+        <div class="bk-name" style="font-family:var(--display);font-size:14px;font-weight:600;letter-spacing:1px">TOTAL COST</div>
+        <div class="bk-cost" style="font-family:var(--display);font-size:18px;color:var(--white)">${fmt(totalCost,2)}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GM COMPARISON -->
+  <div class="compare">
+    <div class="compare-title">Price at Different Margins</div>
+    <div class="compare-grid">
+      ${[55,60,62,65,68,70].map(g => {
+        const p = retailPrice(totalCost, g/100);
+        const c = p/1.1 - totalCost;
+        const isCur = Math.round(gm*100)===g;
+        return `<div class="cmp-cell" style="${isCur?'border-left-color:var(--teal);background:rgba(61,191,170,0.06)':''}">
+          <div class="cmp-gm">${g}% GM${isCur?' ◀ current':''}</div>
+          <div class="cmp-price" style="${isCur?'color:var(--teal)':''}">${fmt(p)}</div>
+          <div class="cmp-contrib">+${fmt(c)} contribution</div>
+        </div>`;
+      }).join('')}
+    </div>
+  </div>
+
+  <!-- BUILDER DISCOUNT -->
+  <div class="builder-panel">
+    <div class="builder-header">
+      <div class="builder-title">Builder Discount</div>
+      ${bdPrice ? `<div style="font-family:var(--display);font-size:18px;color:var(--amber)">${fmt(bdPrice)} <span style="font-family:var(--mono);font-size:11px;color:var(--dim)">inc-GST</span></div>` : ''}
+    </div>
+    <div class="builder-grid">
+      ${BUILDER_TIERS.map((t,i) => {
+        const p = t.pct > 0 ? Math.round(retailInc*(1-t.pct)/5)*5 : retailInc;
+        return `<div class="bd-cell ${state.builder===i?'active':''}" onclick="state.builder=${i};render()">
+          <div class="bd-tier">${t.label}</div>
+          <div class="bd-pct">${t.pct>0?'-'+(t.pct*100)+'%':'Full retail'}</div>
+          <div class="bd-price">${fmt(p)} inc-GST</div>
+        </div>`;
+      }).join('')}
+    </div>
+  </div>`;
+}
+
+function toggleBreakdown(btn) {
+  const body = document.getElementById('bkBody');
+  const collapsed = body.classList.toggle('collapsed');
+  btn.textContent = collapsed ? 'Show ↓' : 'Hide ↑';
+}
+
+// Init
+renderDims();
+</script>
+</body>
+</html>
